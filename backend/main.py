@@ -11,7 +11,11 @@ from routes.reports import router as reports_router
 from routes.ai import router as ai_router
 from utils.logger import get_logger
 
-load_dotenv()
+try:
+	load_dotenv()
+except UnicodeDecodeError:
+	# some editors save .env as UTF-16/UTF-16LE; retry with that encoding
+	load_dotenv(encoding="utf-16")
 logger = get_logger(__name__)
 
 app = FastAPI(title="Hackvotrix Health AI Backend", default_response_class=ORJSONResponse)
