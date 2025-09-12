@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
 interface HealthMetrics {
@@ -43,7 +43,6 @@ interface HealthContextType {
   updateMetrics: (metrics: Partial<HealthMetrics>) => void;
   getRecommendations: () => string[];
   badges: Badge[];
-  streaks: { current: number; longest: number };
   fetchRiskHeatmap: (patientId: string) => Promise<{ url?: string; base64?: string } | null>;
   fetchReports: (patientId: string) => Promise<any[]>;
 }
@@ -59,7 +58,7 @@ interface Badge {
 
 const HealthContext = createContext<HealthContextType | undefined>(undefined);
 
-const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
 
 export function HealthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -113,8 +112,6 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       earnedDate: new Date('2024-01-25'),
     },
   ]);
-
-  const [streaks] = useState({ current: 12, longest: 28 });
 
   useEffect(() => {
     const storedProfile = localStorage.getItem('healthapp_profile');
@@ -190,7 +187,6 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       updateMetrics,
       getRecommendations,
       badges,
-      streaks,
       fetchRiskHeatmap,
       fetchReports,
     }}>

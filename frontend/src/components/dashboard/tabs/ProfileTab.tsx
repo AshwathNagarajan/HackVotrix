@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useHealth } from '../../../context/HealthContext';
 import { Edit3, Save, Camera, Shield, Smartphone, Globe } from 'lucide-react';
-import axios from 'axios';
 
 export default function ProfileTab() {
   const { user } = useAuth();
@@ -14,33 +13,6 @@ export default function ProfileTab() {
     dataSharing: false,
     voiceEnabled: true,
   });
-
-  const [patientForm, setPatientForm] = useState({
-    name: user?.name || '',
-    age: profile?.age || 30,
-    gender: (profile?.gender as any) || 'other',
-    medical_history: (profile?.medicalHistory || []).join(', '),
-    lifestyle: (profile as any)?.lifestyle ? JSON.stringify((profile as any).lifestyle) : '',
-    risk_factors: [],
-  });
-
-  const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:8000';
-
-  const handleCreatePatient = async () => {
-    const { data } = await axios.post(`${API_BASE}/patients/`, {
-      name: patientForm.name,
-      age: Number(patientForm.age),
-      gender: patientForm.gender,
-      medical_history: patientForm.medical_history,
-      lifestyle: patientForm.lifestyle,
-      risk_factors: patientForm.risk_factors,
-    });
-    const patientId = data?.data?.patient_id;
-    if (patientId) {
-      localStorage.setItem('healthapp_patient_id', patientId);
-      alert('Patient created');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -124,23 +96,6 @@ export default function ProfileTab() {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Patient Creation */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Create Patient</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input className="px-3 py-2 border rounded-lg" placeholder="Name" value={patientForm.name} onChange={e => setPatientForm({ ...patientForm, name: e.target.value })} />
-              <input className="px-3 py-2 border rounded-lg" placeholder="Age" type="number" value={patientForm.age as any} onChange={e => setPatientForm({ ...patientForm, age: Number(e.target.value) as any })} />
-              <select className="px-3 py-2 border rounded-lg" value={patientForm.gender} onChange={e => setPatientForm({ ...patientForm, gender: e.target.value })}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-              <input className="px-3 py-2 border rounded-lg" placeholder="Medical history (comma separated)" value={patientForm.medical_history} onChange={e => setPatientForm({ ...patientForm, medical_history: e.target.value })} />
-              <input className="px-3 py-2 border rounded-lg md:col-span-2" placeholder="Lifestyle (JSON or text)" value={patientForm.lifestyle} onChange={e => setPatientForm({ ...patientForm, lifestyle: e.target.value })} />
-            </div>
-            <button onClick={handleCreatePatient} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">Save Patient</button>
           </div>
 
           {/* Medical Information */}
@@ -265,15 +220,6 @@ export default function ProfileTab() {
                   }`} />
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Health Score */}
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-            <h3 className="text-lg font-semibold mb-2">Health Score</h3>
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">85%</div>
-              <p className="text-green-100 text-sm">Excellent progress!</p>
             </div>
           </div>
         </div>

@@ -1,27 +1,34 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Heart, Shield, TrendingUp, Zap } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { Heart, Shield, TrendingUp, Zap } from "lucide-react";
 
 export default function LoginPage() {
   const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('demo@healthai.com');
-  const [password, setPassword] = useState('demo123');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("demo@healthai.com");
+  const [password, setPassword] = useState("demo123");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+    setErrorMessage("");
+
     try {
       if (isLogin) {
         await login(email, password);
       } else {
         await register(email, password, name);
       }
-    } catch (error) {
-      console.error('Authentication error:', error);
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      if (error.response && error.response.data && error.response.data.detail) {
+        setErrorMessage(error.response.data.detail);
+      } else {
+        setErrorMessage("Invalid credentials. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -37,16 +44,14 @@ export default function LoginPage() {
             <Heart className="h-10 w-10 text-white mr-3" />
             <h1 className="text-3xl font-bold">HealthAI</h1>
           </div>
-          
           <h2 className="text-4xl font-bold mb-6 leading-tight">
             Your Personal Health
             <br />
             <span className="text-blue-200">Intelligence Platform</span>
           </h2>
-          
           <p className="text-xl text-blue-100 mb-12 leading-relaxed">
-            AI-powered insights, predictive risk assessments, and personalized recommendations 
-            to help you live your healthiest life.
+            AI-powered insights, predictive risk assessments, and personalized
+            recommendations to help you live your healthiest life.
           </p>
 
           <div className="space-y-6">
@@ -64,7 +69,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute top-20 right-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl"></div>
@@ -79,20 +84,22 @@ export default function LoginPage() {
               <h1 className="text-2xl font-bold text-gray-900">HealthAI</h1>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? 'Welcome back' : 'Create your account'}
+              {isLogin ? "Welcome back" : "Create your account"}
             </h2>
             <p className="text-gray-600">
-              {isLogin 
-                ? 'Sign in to access your personalized health dashboard' 
-                : 'Join thousands of users improving their health with AI'
-              }
+              {isLogin
+                ? "Sign in to access your personalized health dashboard"
+                : "Join thousands of users improving their health with AI"}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Full Name
                 </label>
                 <input
@@ -106,9 +113,11 @@ export default function LoginPage() {
                 />
               </div>
             )}
-            
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -121,9 +130,11 @@ export default function LoginPage() {
                 placeholder="Enter your email"
               />
             </div>
-
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <input
@@ -136,13 +147,12 @@ export default function LoginPage() {
                 placeholder="Enter your password"
               />
             </div>
-
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
             </button>
           </form>
 
@@ -151,16 +161,23 @@ export default function LoginPage() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : 'Already have an account? Sign in'
-              }
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
             </button>
           </div>
 
+          {/* Error Message Display */}
+          {errorMessage && (
+            <div className="mt-4 p-4 bg-red-50 rounded-lg">
+              <p className="text-sm text-red-800 font-medium">{errorMessage}</p>
+            </div>
+          )}
           {isLogin && (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium mb-1">Demo Credentials:</p>
+              <p className="text-sm text-blue-800 font-medium mb-1">
+                Demo Credentials:
+              </p>
               <p className="text-sm text-blue-700">Email: demo@healthai.com</p>
               <p className="text-sm text-blue-700">Password: demo123</p>
             </div>

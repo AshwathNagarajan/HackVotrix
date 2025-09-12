@@ -14,23 +14,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:8000';
 
-  useEffect(() => {
-    const existing = localStorage.getItem('healthapp_patient_id');
-    if (existing) setSelected(existing);
-    (async () => {
-      try {
-        // simple fetch: list first 50 patients
-        const { data } = await axios.get(`${API_BASE}/patients`, { params: { limit: 50 } });
-        setPatients(data?.data || []);
-      } catch {}
-    })();
-  }, []);
-
-  const onSelect = (id: string) => {
-    setSelected(id);
-    localStorage.setItem('healthapp_patient_id', id);
-  };
-
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -51,19 +34,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
             />
           </div>
 
-          <div className="hidden md:flex items-center ml-4">
-            <UserCircle2 className="h-5 w-5 text-gray-500 mr-2" />
-            <select
-              value={selected || ''}
-              onChange={(e) => onSelect(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="">Select patient</option>
-              {patients.map(p => (
-                <option key={p._id} value={p._id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <div className="flex items-center space-x-4">

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Bot, User } from 'lucide-react';
 import axios from 'axios';
+import { useState, useRef, useEffect } from 'react';
 
 interface Message {
   id: string;
@@ -48,11 +48,8 @@ export default function ChatbotTab() {
     setInputText('');
     setIsTyping(true);
 
-    const patientId = typeof window !== 'undefined' ? localStorage.getItem('healthapp_patient_id') : null;
-
     try {
-      if (!patientId) throw new Error('No patient selected');
-      const { data } = await axios.post(`${API_BASE}/ai/chat/${patientId}`, { message: text });
+      const { data } = await axios.post(`${API_BASE}/ai/chat`, { message: text });
       const botText = data?.data?.reply || '...';
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),

@@ -1,55 +1,57 @@
+// Sidebar.tsx
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  Heart, 
-  BarChart3, 
-  MessageSquare, 
-  User, 
-  Trophy,
-  Activity,
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Heart,
+  BarChart3,
+  MessageSquare,
+  User,
   Calendar,
   Shield,
-  X
+  X,
+  Home,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
 const menuItems = [
-  { id: 'overview', label: 'Overview', icon: Heart },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'chatbot', label: 'AI Assistant', icon: MessageSquare },
-  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'overview', label: 'Overview', icon: Home, path: '/' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics' },
+  { id: 'chatbot', label: 'AI Assistant', icon: MessageSquare, path: '/ask-ai' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
 const secondaryItems = [
-  { id: 'achievements', label: 'Achievements', icon: Trophy },
-  { id: 'appointments', label: 'Appointments', icon: Calendar },
-  { id: 'privacy', label: 'Privacy', icon: Shield },
+  { id: 'appointments', label: 'Appointments', icon: Calendar, path: '/book-appointment' },
+  { id: 'privacy', label: 'Privacy', icon: Shield, path: '/privacy' },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: SidebarProps) {
+export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      <div
+        className={`
+          fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -74,8 +76,7 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: 
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500">Health Score: 85%</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name.toUpperCase()}</p>
               </div>
             </div>
           </div>
@@ -89,11 +90,11 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: 
                   <button
                     key={item.id}
                     onClick={() => {
-                      setActiveTab(item.id);
+                      navigate(item.path);
                       setIsOpen(false);
                     }}
                     className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-                      activeTab === item.id
+                      location.pathname === item.path
                         ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -115,9 +116,17 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: 
                   return (
                     <button
                       key={item.id}
-                      className="w-full flex items-center px-4 py-2 text-left rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                      onClick={() => {
+                        navigate(item.path);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
+                        location.pathname === item.path
+                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                     >
-                      <Icon className="h-4 w-4 mr-3" />
+                      <Icon className="h-5 w-5 mr-3" />
                       {item.label}
                     </button>
                   );
@@ -125,19 +134,6 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: 
               </div>
             </div>
           </nav>
-
-          {/* Health Streak */}
-          <div className="p-6 border-t border-gray-200">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Current Streak</p>
-                  <p className="text-2xl font-bold">12 Days</p>
-                </div>
-                <Activity className="h-8 w-8 opacity-80" />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </>

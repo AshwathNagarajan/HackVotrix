@@ -1,5 +1,6 @@
-import React from 'react';
 import { TrendingUp, BarChart3 } from 'lucide-react';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 interface HealthChartProps {
   title: string;
@@ -8,43 +9,25 @@ interface HealthChartProps {
 }
 
 export default function HealthChart({ title, type, timeRange }: HealthChartProps) {
-  // Mock data generation based on type and time range
-  const generateMockData = () => {
-    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-    const data = [];
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      let value;
-      switch (type) {
-        case 'steps':
-          value = Math.floor(Math.random() * 5000) + 6000;
-          break;
-        case 'sleep':
-          value = Math.random() * 2 + 6.5;
-          break;
-        case 'heartRate':
-          value = Math.floor(Math.random() * 20) + 65;
-          break;
-        default:
-          value = Math.random() * 100;
-      }
-      
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: value,
-      });
-    }
-    
-    return data;
-  };
+  const [data, setData] = useState<{ date: string; value: number }[]>([]);
 
-  const data = generateMockData();
-  const maxValue = Math.max(...data.map(d => d.value));
-  const minValue = Math.min(...data.map(d => d.value));
-  const avgValue = data.reduce((sum, d) => sum + d.value, 0) / data.length;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/health/metrics`, {
+          params: { type, timeRange },
+        });
+        setData(data);
+      } catch (error) {
+        console.error('Failed to fetch health metrics:', error);
+      }
+    };
+    fetchData();
+  }, [type, timeRange]);
+
+  const maxValue = Math.max(...data.map(d => d.value), 0);
+  const minValue = Math.min(...data.map(d => d.value), 0);
+  const avgValue = data.reduce((sum, d) => sum + d.value, 0) / (data.length || 1);
 
   const getUnit = () => {
     switch (type) {
@@ -139,7 +122,7 @@ export default function HealthChart({ title, type, timeRange }: HealthChartProps
         <div className="flex items-center">
           <TrendingUp className="h-3 w-3 mr-1" />
           <span>
-            {((data[data.length - 1]?.value - data[0]?.value) / data[0]?.value * 100).toFixed(1)}% change
+            {data.length > 1 ? ((data[data.length - 1]?.value - data[0]?.value) / data[0]?.value * 100).toFixed(1) : 0}% change
           </span>
         </div>
         <span>{data[data.length - 1]?.date}</span>

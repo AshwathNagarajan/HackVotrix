@@ -1,5 +1,4 @@
-import React from 'react';
-import { AlertTriangle, Shield, TrendingDown, Info } from 'lucide-react';
+import { AlertTriangle, Shield, Info } from 'lucide-react';
 
 interface RiskAssessment {
   cardiovascular: number;
@@ -104,13 +103,6 @@ export default function RiskAssessmentCard({ riskAssessment }: RiskAssessmentCar
             </div>
           );
         })}
-      </div>
-
-      <div className="mt-6 pt-4 border-t border-gray-100">
-        <div className="flex items-center text-green-600 text-sm">
-          <TrendingDown className="h-4 w-4 mr-2" />
-          <span>Risk decreased by 5% this month</span>
-        </div>
       </div>
     </div>
   );

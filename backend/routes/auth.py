@@ -28,8 +28,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 	db = get_db()
 	user = await db.users.find_one({"email": form_data.username})
 	if not user:
-		raise HTTPException(status_code=401, detail="Invalid credentials")
+		raise HTTPException(status_code=401, detail="Invalid email. Please re-enter your credentials.")
 	if not verify_password(form_data.password, user.get("password_hash", "")):
-		raise HTTPException(status_code=401, detail="Invalid credentials")
+		raise HTTPException(status_code=401, detail="Invalid password. Please re-enter your credentials.")
 	token_info = create_access_token(str(user["_id"]))
-	return {"access_token": token_info["access_token"], "expires_in": token_info["expires_in"], "token_type": "bearer"}
+	return {
+		"access_token": token_info["access_token"],
+		"expires_in": token_info["expires_in"],
+		"token_type": "bearer",
+		"profileComplete": user.get("profileComplete", False)
+	}

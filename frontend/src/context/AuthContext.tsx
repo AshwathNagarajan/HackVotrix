@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
 interface User {
@@ -21,7 +21,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:8000';
+// Updated default API_BASE to use localhost
+const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,28 +41,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     setLoading(true);
-    const form = new URLSearchParams();
-    form.append('username', email);
-    form.append('password', password);
-    const { data } = await axios.post(`${API_BASE}/auth/login`, form, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    try {
+      const form = new URLSearchParams();
+      form.append('username', email);
+      form.append('password', password);
+      const { data } = await axios.post(`${API_BASE}/auth/login`, form, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
 
-    const token: string = data.access_token;
-    localStorage.setItem('healthapp_token', token);
-    axios.defaults.baseURL = API_BASE;
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const token: string = data.access_token;
+      localStorage.setItem('healthapp_token', token);
+      axios.defaults.baseURL = API_BASE;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    const newUser: User = {
-      id: 'me',
-      email,
-      name: email.split('@')[0],
-      profileComplete: false,
-      createdAt: new Date(),
-    };
-    setUser(newUser);
-    localStorage.setItem('healthapp_user', JSON.stringify(newUser));
-    setLoading(false);
+      const newUser: User = {
+        id: 'me',
+        email,
+        name: email.split('@')[0],
+        profileComplete: data.profileComplete,
+        createdAt: new Date(),
+      };
+      setUser(newUser);
+      localStorage.setItem('healthapp_user', JSON.stringify(newUser));
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      throw new Error(error.response?.data?.detail || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (email: string, password: string, name: string) => {
