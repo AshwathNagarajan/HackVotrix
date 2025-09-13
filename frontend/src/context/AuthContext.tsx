@@ -27,6 +27,50 @@ const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:500
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Add axios response interceptor for handling token expiration
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        
+        // If the error is 401 and we haven't tried to refresh yet
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            // Try to refresh the token
+            const token = localStorage.getItem('healthapp_token');
+            if (token) {
+              const response = await axios.post(`${API_BASE}/auth/refresh`, {}, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (response.data.access_token) {
+                localStorage.setItem('healthapp_token', response.data.access_token);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+                originalRequest.headers['Authorization'] = `Bearer ${response.data.access_token}`;
+                
+                // Retry the original request with the new token
+                return axios(originalRequest);
+              }
+            }
+          } catch (refreshError) {
+            // If refresh fails, log out
+            logout();
+            throw error;
+          }
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+    
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('healthapp_user');
@@ -54,8 +98,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       axios.defaults.baseURL = API_BASE;
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+      // Decode token to get user ID
+      let userId = '';
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.sub) {
+          userId = payload.sub;
+        }
+      } catch (e) {
+        console.error('Failed to decode token', e);
+      }
+
+      // This is the critical fix: store the actual patient ID
+      if (userId) {
+        localStorage.setItem('healthapp_patient_id', userId);
+      }
+
       const newUser: User = {
-        id: 'me',
+        id: userId,
         email,
         name: email.split('@')[0],
         profileComplete: data.profileComplete,

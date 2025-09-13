@@ -3,6 +3,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
+from fastapi import HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,4 +33,30 @@ def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> 
 
 
 def decode_token(token: str) -> dict:
-	return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+    try:
+        payload = decode_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))

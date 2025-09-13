@@ -5,8 +5,10 @@ from models import ResponseModel, SymptomRequest, ChatMessage
 from database import get_db
 from services.ollama_service import analyze_reports_grouped_by_date, analyze_risk_heatmap, analyze_symptom_with_history, chat_with_history
 from services.auth_service import decode_token
+from utils.logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -48,9 +50,24 @@ async def analyze_symptom(patient_id: str, body: SymptomRequest, user_id: str = 
 
 @router.post("/chat/{patient_id}", response_model=ResponseModel)
 async def chat(patient_id: str, body: ChatMessage, user_id: str = Depends(get_current_user)):
-	db = get_db()
-	reports = []
-	async for r in db.reports.find({"patient_id": patient_id}).sort("report_date", 1):
-		reports.append(r)
-	result = await chat_with_history(patient_id, body.message, reports)
-	return {"success": True, "data": result, "error": None}
+    try:
+        db = get_db()
+        reports = []
+        async for r in db.reports.find({"patient_id": patient_id}).sort("report_date", 1):
+            reports.append(r)
+        
+        if not reports:
+            # If no reports found, we can still chat but without context
+            logger.warning(f"No medical reports found for patient {patient_id}")
+        
+        result = await chat_with_history(patient_id, body.message, reports, body.history)
+        return {"success": True, "data": result, "error": None}
+    except Exception as e:
+        logger.error(f"Error in chat endpoint: {str(e)}")
+        return {
+            "success": False,
+            "data": {
+                "reply": "I apologize, but I encountered an error while processing your request. Please try again later."
+            },
+            "error": str(e)
+        }

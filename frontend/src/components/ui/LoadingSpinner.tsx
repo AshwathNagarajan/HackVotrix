@@ -1,12 +1,25 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
 
-export default function LoadingSpinner() {
+interface LoadingSpinnerProps {
+  className?: string;
+  minimal?: boolean;
+}
+
+export default function LoadingSpinner({ className, minimal = false }: LoadingSpinnerProps) {
+  if (minimal) {
+    return (
+      <div className={className || "w-5 h-5"}>
+        <div className="w-full h-full border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="text-center">
         <div className="relative">
-          <Heart className="h-16 w-16 text-blue-600 animate-pulse mx-auto mb-4" />
+          <Heart className={className || "h-16 w-16 text-blue-600 animate-pulse mx-auto mb-4"} />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
           </div>

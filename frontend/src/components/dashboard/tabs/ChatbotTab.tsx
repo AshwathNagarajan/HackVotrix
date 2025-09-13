@@ -10,19 +10,30 @@ interface Message {
   typing?: boolean;
 }
 
-const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
+const patientId = localStorage.getItem('healthapp_patient_id');
 
 export default function ChatbotTab() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem('chatHistory');
+    if (savedMessages) {
+      const parsed = JSON.parse(savedMessages);
+      // Convert string timestamps back to Date objects
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+    }
+    return [{
       id: '1',
       text: "Hello! I'm your AI health assistant. I can help you with symptom checking, lifestyle guidance, and personalized health recommendations. What would you like to know today?",
       sender: 'bot',
       timestamp: new Date(),
-    }
-  ]);
+    }];
+  });
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [loadingState, setLoadingState] = useState<'idle' | 'sending' | 'thinking' | 'error'>('idle');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +43,7 @@ export default function ChatbotTab() {
 
   useEffect(() => {
     scrollToBottom();
+    localStorage.setItem('chatHistory', JSON.stringify(messages));
   }, [messages]);
 
   const handleSendMessage = async (text: string) => {
@@ -46,10 +58,22 @@ export default function ChatbotTab() {
 
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
+    setLoadingState('sending');
     setIsTyping(true);
 
     try {
-      const { data } = await axios.post(`${API_BASE}/ai/chat`, { message: text });
+      setLoadingState('thinking');
+      if (!patientId) {
+        throw new Error('No patient ID found. Please log in again.');
+      }
+      const { data } = await axios.post(`${API_BASE}/ai/chat/${patientId}`, { 
+        message: text,
+        history: messages.map(msg => ({
+          text: msg.text,
+          sender: msg.sender,
+          timestamp: msg.timestamp.toISOString()
+        }))
+      });
       const botText = data?.data?.reply || '...';
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -59,13 +83,29 @@ export default function ChatbotTab() {
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (e: any) {
+      setLoadingState('error');
+      let errorMessage = 'Sorry, I encountered an error while processing your request.';
+      
+      if (e.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (e.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a moment before trying again.';
+      } else if (e.response?.data?.error) {
+        errorMessage = e.response.data.error;
+      } else if (!navigator.onLine) {
+        errorMessage = 'You appear to be offline. Please check your internet connection.';
+      }
+      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: e?.message || 'Sorry, I could not process that right now.',
+        text: errorMessage,
         sender: 'bot',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botMessage]);
+
+      // Reset error state after 3 seconds
+      setTimeout(() => setLoadingState('idle'), 3000);
     } finally {
       setIsTyping(false);
     }
@@ -143,17 +183,25 @@ export default function ChatbotTab() {
             </div>
           ))}
           
-          {isTyping && (
+          {(isTyping || loadingState !== 'idle') && (
             <div className="flex justify-start">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
                   <Bot className="h-4 w-4 text-white" />
                 </div>
                 <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {loadingState === 'sending' ? 'Sending message...' : 
+                       loadingState === 'thinking' ? 'AI is thinking...' : 
+                       loadingState === 'error' ? 'Error occurred' : 
+                       'Typing...'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -187,8 +235,12 @@ export default function ChatbotTab() {
             </div>
             <button
               onClick={() => handleSendMessage(inputText)}
-              disabled={!inputText.trim() || isTyping}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-3 rounded-xl transition-colors"
+              disabled={!inputText.trim() || isTyping || loadingState !== 'idle'}
+              className={`p-3 rounded-xl transition-colors ${
+                loadingState === 'error' 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } disabled:bg-gray-400 text-white`}
             >
               <Send className="h-4 w-4" />
             </button>

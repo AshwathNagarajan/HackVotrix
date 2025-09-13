@@ -7,7 +7,6 @@ import { useState } from 'react';
 export default function OverviewTab() {
   const { riskAssessment } = useHealth();
   const [, setActiveTab] = useState('overview');
-
   return (
     <div className="space-y-6">
       {/* Welcome Section */}

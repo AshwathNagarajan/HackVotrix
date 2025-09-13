@@ -78,4 +78,5 @@ class SymptomRequest(BaseModel):
 
 
 class ChatMessage(BaseModel):
-	message: str
+    message: str
+    history: Optional[List[Dict[str, Any]]] = []

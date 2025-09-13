@@ -5,6 +5,7 @@ from models import UserCreate, TokenResponse, ResponseModel
 from services.auth_service import create_access_token, hash_password, verify_password
 from database import get_db
 from utils.logger import get_logger
+from services.auth_service import get_current_user
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -21,6 +22,21 @@ async def signup(payload: UserCreate):
 	password_hash = hash_password(payload.password)
 	res = await db.users.insert_one({"email": payload.email, "password_hash": password_hash})
 	return {"success": True, "data": {"user_id": str(res.inserted_id)}, "error": None}
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(user_id: str = Depends(get_current_user)):
+    """Refresh the access token"""
+    try:
+        token_info = create_access_token(user_id)
+        return {
+            "access_token": token_info["access_token"],
+            "expires_in": token_info["expires_in"],
+            "token_type": "bearer",
+            "profileComplete": True  # Token refresh only happens for existing users
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/login", response_model=TokenResponse)

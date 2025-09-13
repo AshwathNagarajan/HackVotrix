@@ -1,8 +1,8 @@
 // App.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HealthProvider } from './context/HealthContext';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/auth/LoginPage';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import LoadingSpinner from './components/ui/LoadingSpinner';
